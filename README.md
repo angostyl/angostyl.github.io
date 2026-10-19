@@ -203,6 +203,13 @@
       outline-offset: 1px;
     }
 
+    .inline-num-input {
+      width: 85px !important;
+      padding: 0.35rem 0.5rem !important;
+      font-weight: 700;
+      text-align: center;
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -301,10 +308,108 @@
       z-index: 3;
     }
 
-    /* Células de Disponibilidade */
-    td.disp-cell {
-      padding: 0.35rem;
-      min-width: 155px;
+    /* Passo 1: Seleção de Dias */
+    .day-check-cell {
+      text-align: center;
+      min-width: 115px;
+      padding: 0.45rem;
+    }
+
+    .day-toggle-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      cursor: pointer;
+      font-size: 0.83rem;
+      font-weight: 600;
+      user-select: none;
+      width: 100%;
+      transition: all 0.15s;
+    }
+
+    .day-toggle-label.day-on {
+      background-color: var(--disp-bg);
+      color: var(--disp-text);
+      border-color: var(--disp-border);
+    }
+
+    .day-toggle-label.day-off {
+      background-color: #f8fafc;
+      color: var(--text-muted);
+      border-color: var(--border);
+    }
+
+    /* Passo 2: Horários por Pessoa e Dia Selecionado */
+    .person-schedule-card {
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+      background-color: var(--surface);
+    }
+
+    .person-schedule-header {
+      background-color: #f1f5f9;
+      padding: 0.65rem 1rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .person-days-container {
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .selected-day-row {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      background-color: #f8fafc;
+    }
+
+    .selected-day-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .shifts-flex {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .shift-slot-box {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.45rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .shift-slot-time {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
     }
 
     .disp-select {
@@ -455,12 +560,6 @@
       flex-wrap: wrap;
       align-items: center;
     }
-
-    .shift-col-hdr {
-      text-align: center;
-      font-size: 0.8rem;
-      line-height: 1.3;
-    }
   </style>
 </head>
 <body>
@@ -487,7 +586,7 @@
     <section id="sec-equipa" class="section active">
       <div class="card">
         <h2 class="card-title" id="form-equipa-title">Adicionar Elemento à Equipa</h2>
-        <p class="card-desc">Registe os elementos da barraca, o número total de turnos pretendidos durante o evento, o limite máximo de turnos por dia para cada pessoa e observações opcionais.</p>
+        <p class="card-desc">Defina o nome, o total de turnos pretendidos no evento e o <strong>limite máximo de turnos por dia</strong> para cada pessoa.</p>
         <form id="form-equipa">
           <input type="hidden" id="pessoa-id-edit" value="">
           <div class="form-grid">
@@ -496,16 +595,16 @@
               <input type="text" id="pessoa-nome" required placeholder="Ex.: João Silva">
             </div>
             <div class="form-group">
-              <label for="pessoa-turnos">Turnos pretendidos (evento) *</label>
+              <label for="pessoa-turnos">Turnos pretendidos (total) *</label>
               <input type="number" id="pessoa-turnos" min="0" max="100" value="3" required>
             </div>
             <div class="form-group">
-              <label for="pessoa-max-dia">Máx. turnos por dia *</label>
+              <label for="pessoa-max-dia">Limite máx. turnos por dia *</label>
               <input type="number" id="pessoa-max-dia" min="1" max="24" value="1" required>
             </div>
             <div class="form-group">
               <label for="pessoa-obs">Observações (opcional)</label>
-              <input type="text" id="pessoa-obs" placeholder="Ex.: Prefere turnos ao início da noite">
+              <input type="text" id="pessoa-obs" placeholder="Ex.: Prefere início da noite">
             </div>
             <div class="actions-row">
               <button type="submit" class="btn btn-primary" id="btn-salvar-pessoa">Adicionar Pessoa</button>
@@ -517,6 +616,7 @@
 
       <div class="card">
         <h2 class="card-title">Elementos da Equipa (<span id="count-equipa">0</span>)</h2>
+        <p class="card-desc">Pode alterar o <strong>Limite Máx. Turnos / Dia</strong> ou os <strong>Turnos Pretendidos</strong> diretamente nas caixas numéricas da tabela abaixo.</p>
         <div class="table-wrapper" id="equipa-table-container"></div>
       </div>
     </section>
@@ -525,7 +625,7 @@
     <section id="sec-disponibilidades" class="section">
       <div class="card">
         <h2 class="card-title">Definições de Datas e Turnos</h2>
-        <p class="card-desc">Configure o período do evento, o horário diário de funcionamento, a duração de cada turno e o limite padrão de turnos por dia por pessoa. Se a hora de fecho for igual ou inferior à de abertura, considera-se que o fecho ocorre na madrugada seguinte.</p>
+        <p class="card-desc">Configure os dias do evento, o horário de funcionamento e a duração dos turnos.</p>
         <form id="form-definicoes">
           <div class="form-grid">
             <div class="form-group">
@@ -552,27 +652,38 @@
               <label for="cfg-pessoas-turno">Pessoas por Turno</label>
               <input type="number" id="cfg-pessoas-turno" min="1" max="50" required>
             </div>
-            <div class="form-group">
-              <label for="cfg-max-turnos-dia">Máx. Turnos / Dia por Pessoa (Geral)</label>
-              <input type="number" id="cfg-max-turnos-dia" min="1" max="24" required>
-            </div>
             <div class="actions-row">
-              <button type="submit" class="btn btn-primary">Guardar e Atualizar Grelha</button>
-              <button type="button" class="btn btn-secondary" id="btn-aplicar-max-todos" title="Aplica este limite diário a todas as pessoas já registadas na equipa">Aplicar Limite Diário a Todos</button>
+              <button type="submit" class="btn btn-primary">Guardar Definições</button>
             </div>
           </div>
         </form>
       </div>
 
+      <!-- PASSO 1: SELECIONAR OS DIAS -->
       <div class="card">
-        <h2 class="card-title">Grelha de Disponibilidades</h2>
-        <p class="card-desc">Indique a disponibilidade de cada elemento para cada turno.</p>
+        <h2 class="card-title">Passo 1: Selecionar os Dias em que Cada Pessoa Pode Trabalhar</h2>
+        <p class="card-desc">Assinale primeiro os dias em que cada pessoa está disponível. Só depois de assinalar o dia é que os horários desse dia aparecem no Passo 2 abaixo.</p>
+        <div class="table-wrapper" id="dias-disponiveis-container"></div>
+      </div>
+
+      <!-- PASSO 2: HORÁRIOS DOS DIAS SELECIONADOS -->
+      <div class="card">
+        <h2 class="card-title">Passo 2: Disponibilidade de Horários (Apenas nos Dias Selecionados)</h2>
+        <p class="card-desc">Para cada pessoa, configure os horários apenas para os dias que selecionou no Passo 1.</p>
         <div class="legend">
           <span class="legend-item state-available">Disponível</span>
           <span class="legend-item state-preferred">Preferencialmente disponível</span>
           <span class="legend-item state-unavailable">Indisponível</span>
         </div>
-        <div class="table-wrapper" id="disponibilidades-container"></div>
+        <div class="form-grid" style="margin-bottom: 1rem; max-width: 360px;">
+          <div class="form-group">
+            <label for="select-filtro-disp-pessoa">Filtrar por Pessoa</label>
+            <select id="select-filtro-disp-pessoa">
+              <option value="todas">Mostrar todas as pessoas</option>
+            </select>
+          </div>
+        </div>
+        <div id="horarios-disponiveis-container"></div>
       </div>
     </section>
 
@@ -596,7 +707,12 @@
     <section id="sec-horarios" class="section">
       <div class="card">
         <h2 class="card-title">Geração Automática de Horários</h2>
-        <p class="card-desc">Distribui a equipa pelos turnos respeitando disponibilidades, o limite máximo de turnos por dia de cada pessoa, equilíbrio de carga e preferências de amizade.</p>
+        <p class="card-desc">
+          Regras aplicadas pelo gerador:
+          <strong>1)</strong> Só escala pessoas nos dias e horários disponíveis;
+          <strong>2)</strong> Dá <strong>prioridade a que cada pessoa disponível num dia tenha pelo menos 1 turno nesse dia</strong> antes de atribuir um 2.º turno no mesmo dia a alguém;
+          <strong>3)</strong> Nunca ultrapassa o <strong>limite máximo de turnos por dia</strong> configurado para cada pessoa.
+        </p>
         <div class="actions-row">
           <button type="button" class="btn btn-primary" id="btn-gerar-horario">Gerar Horários</button>
           <button type="button" class="btn btn-secondary" id="btn-regenerar-horario">Voltar a Gerar</button>
@@ -629,7 +745,8 @@
     (function () {
       "use strict";
 
-      const STORAGE_KEY = "barraca_gestao_turnos_v1";
+      const STORAGE_KEY = "barraca_gestao_turnos_v2";
+      const LEGACY_STORAGE_KEY = "barraca_gestao_turnos_v1";
 
       // Estado da aplicação
       let state = {
@@ -640,10 +757,11 @@
           horaInicio: "21:00",
           horaFim: "03:00",
           duracaoMinutos: 120,
-          pessoasPorTurno: 2,
-          maxTurnosDia: 1
+          pessoasPorTurno: 2
         },
-        // disponibilidades[pessoaId][turnoId] = "available" | "preferred" | "unavailable"
+        // diasDisponiveis[pessoaId][dataIso] = true | false (Passo 1)
+        diasDisponiveis: {},
+        // disponibilidades[pessoaId][turnoId] = "available" | "preferred" | "unavailable" (Passo 2)
         disponibilidades: {},
         // amizades[pessoaIdA][pessoaIdB] = -2 | -1 | 0 | 1 | 2
         amizades: {},
@@ -667,12 +785,11 @@
       }
 
       function obterLimiteDiaPessoa(pessoa) {
-        const limPadrao = Math.max(1, parseInt(state.definicoes.maxTurnosDia, 10) || 1);
         if (pessoa && typeof pessoa.maxTurnosDia !== "undefined" && pessoa.maxTurnosDia !== null && pessoa.maxTurnosDia !== "") {
           const val = parseInt(pessoa.maxTurnosDia, 10);
           if (!isNaN(val) && val >= 1) return val;
         }
-        return limPadrao;
+        return 1;
       }
 
       function guardarEstado() {
@@ -685,21 +802,30 @@
 
       function carregarEstado() {
         try {
-          const guardado = localStorage.getItem(STORAGE_KEY);
+          let guardado = localStorage.getItem(STORAGE_KEY);
+          if (!guardado) {
+            guardado = localStorage.getItem(LEGACY_STORAGE_KEY);
+          }
           if (guardado) {
             const parsed = JSON.parse(guardado);
             if (parsed && typeof parsed === "object") {
               if (parsed.definicoes && typeof parsed.definicoes === "object") {
                 state.definicoes = Object.assign({}, state.definicoes, parsed.definicoes);
               }
-              state.definicoes.maxTurnosDia = Math.max(1, parseInt(state.definicoes.maxTurnosDia, 10) || 1);
               state.equipa = Array.isArray(parsed.equipa) ? parsed.equipa.map(function (p) {
                 return Object.assign({}, p, {
                   maxTurnosDia: obterLimiteDiaPessoa(p)
                 });
               }) : [];
-              state.disponibilidades = parsed.disponibilidades && typeof parsed.disponibilidades === "object" ? parsed.disponibilidades : {};
-              state.amizades = parsed.amizades && typeof parsed.amizades === "object" ? parsed.amizades : {};
+              state.diasDisponiveis = parsed.diasDisponiveis && typeof parsed.diasDisponiveis === "object"
+                ? parsed.diasDisponiveis
+                : {};
+              state.disponibilidades = parsed.disponibilidades && typeof parsed.disponibilidades === "object"
+                ? parsed.disponibilidades
+                : {};
+              state.amizades = parsed.amizades && typeof parsed.amizades === "object"
+                ? parsed.amizades
+                : {};
               state.horarioGerado = parsed.horarioGerado || null;
             }
           }
@@ -708,7 +834,7 @@
         }
       }
 
-      // Cálculo da lista de turnos com base nas definições
+      // Datas e Turnos
       function converterHoraParaMinutos(horaStr) {
         const partes = (horaStr || "00:00").split(":");
         return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
@@ -727,59 +853,105 @@
         return partes[2] + "/" + partes[1] + "/" + partes[0];
       }
 
-      function obterTurnosConfigurados() {
+      function obterDiasConfigurados() {
         const cfg = state.definicoes;
-        if (!cfg.dataInicio || !cfg.dataFim || !cfg.horaInicio || !cfg.horaFim) return [];
-
+        if (!cfg.dataInicio || !cfg.dataFim) return [];
         const dInicio = new Date(cfg.dataInicio + "T00:00:00");
         const dFim = new Date(cfg.dataFim + "T00:00:00");
         if (isNaN(dInicio.getTime()) || isNaN(dFim.getTime()) || dFim < dInicio) return [];
 
+        const dias = [];
+        const maxDias = 60;
+        let contador = 0;
+        for (let d = new Date(dInicio); d <= dFim && contador < maxDias; d.setDate(d.getDate() + 1), contador++) {
+          const ano = d.getFullYear();
+          const mes = String(d.getMonth() + 1).padStart(2, "0");
+          const dia = String(d.getDate()).padStart(2, "0");
+          const dataIso = ano + "-" + mes + "-" + dia;
+          dias.push({
+            dataIso: dataIso,
+            dataFormatada: formatarDataPt(dataIso)
+          });
+        }
+        return dias;
+      }
+
+      function obterTurnosConfigurados() {
+        const cfg = state.definicoes;
+        const dias = obterDiasConfigurados();
+        if (dias.length === 0 || !cfg.horaInicio || !cfg.horaFim) return [];
+
         const minInicio = converterHoraParaMinutos(cfg.horaInicio);
         let minFim = converterHoraParaMinutos(cfg.horaFim);
-        // Se hora de fecho <= hora de abertura, atravessa a meia-noite
         if (minFim <= minInicio) {
           minFim += 1440;
         }
 
         const duracao = Math.max(15, parseInt(cfg.duracaoMinutos, 10) || 60);
         const turnos = [];
-        const maxDias = 60; // Proteção contra intervalos excessivos
-        let contadorDias = 0;
 
-        for (let d = new Date(dInicio); d <= dFim && contadorDias < maxDias; d.setDate(d.getDate() + 1), contadorDias++) {
-          const ano = d.getFullYear();
-          const mes = String(d.getMonth() + 1).padStart(2, "0");
-          const dia = String(d.getDate()).padStart(2, "0");
-          const dataIso = ano + "-" + mes + "-" + dia;
-
+        dias.forEach(function (dObj) {
           for (let t = minInicio; t < minFim; t += duracao) {
             const tFim = Math.min(t + duracao, minFim);
             const hIniStr = formatarMinutosParaHora(t);
             const hFimStr = formatarMinutosParaHora(tFim);
-            const idTurno = dataIso + "_" + hIniStr + "-" + hFimStr;
+            const idTurno = dObj.dataIso + "_" + hIniStr + "-" + hFimStr;
 
             turnos.push({
               id: idTurno,
-              dataIso: dataIso,
-              dataFormatada: formatarDataPt(dataIso),
+              dataIso: dObj.dataIso,
+              dataFormatada: dObj.dataFormatada,
               horaInicio: hIniStr,
               horaFim: hFimStr,
               duracaoMin: tFim - t
             });
           }
-        }
+        });
         return turnos;
       }
 
-      function obterDisponibilidade(pessoaId, turnoId) {
-        if (state.disponibilidades[pessoaId] && state.disponibilidades[pessoaId][turnoId]) {
-          return state.disponibilidades[pessoaId][turnoId];
+      // Gestão de Disponibilidade de Dia (Passo 1) e de Horário (Passo 2)
+      function podeTrabalharNoDia(pessoaId, dataIso) {
+        if (state.diasDisponiveis[pessoaId] && typeof state.diasDisponiveis[pessoaId][dataIso] === "boolean") {
+          return state.diasDisponiveis[pessoaId][dataIso];
         }
-        return "available"; // Estado predefinido: Disponível
+        return false;
       }
 
-      function definirDisponibilidade(pessoaId, turnoId, valor) {
+      function definirDiaDisponivel(pessoaId, dataIso, ativo) {
+        if (!state.diasDisponiveis[pessoaId]) {
+          state.diasDisponiveis[pessoaId] = {};
+        }
+        state.diasDisponiveis[pessoaId][dataIso] = Boolean(ativo);
+
+        // Se acabou de ativar o dia, garantir que os turnos desse dia ficam "available" por defeito
+        if (ativo) {
+          if (!state.disponibilidades[pessoaId]) {
+            state.disponibilidades[pessoaId] = {};
+          }
+          const turnosDoDia = obterTurnosConfigurados().filter(function (t) {
+            return t.dataIso === dataIso;
+          });
+          turnosDoDia.forEach(function (t) {
+            if (!state.disponibilidades[pessoaId][t.id]) {
+              state.disponibilidades[pessoaId][t.id] = "available";
+            }
+          });
+        }
+        guardarEstado();
+      }
+
+      function obterDisponibilidadeHorario(pessoaId, turno) {
+        if (!podeTrabalharNoDia(pessoaId, turno.dataIso)) {
+          return "unavailable";
+        }
+        if (state.disponibilidades[pessoaId] && state.disponibilidades[pessoaId][turno.id]) {
+          return state.disponibilidades[pessoaId][turno.id];
+        }
+        return "available";
+      }
+
+      function definirDisponibilidadeHorario(pessoaId, turnoId, valor) {
         if (!state.disponibilidades[pessoaId]) {
           state.disponibilidades[pessoaId] = {};
         }
@@ -831,8 +1003,8 @@
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>Turnos Pretendidos</th>
-                <th>Máx. Turnos / Dia</th>
+                <th style="width: 190px;">Turnos Pretendidos (Evento)</th>
+                <th style="width: 190px;">Limite Máx. Turnos / Dia</th>
                 <th>Observações</th>
                 <th style="width: 170px;">Ações</th>
               </tr>
@@ -845,8 +1017,12 @@
           html += `
             <tr>
               <td><strong>${escaparHtml(p.nome)}</strong></td>
-              <td>${Number(p.turnosPretendidos)}</td>
-              <td>${limDia}</td>
+              <td>
+                <input type="number" class="inline-num-input" min="0" max="100" value="${Number(p.turnosPretendidos)}" data-inline-field="turnosPretendidos" data-id="${p.id}" aria-label="Turnos pretendidos de ${escaparHtml(p.nome)}">
+              </td>
+              <td>
+                <input type="number" class="inline-num-input" min="1" max="24" value="${limDia}" data-inline-field="maxTurnosDia" data-id="${p.id}" aria-label="Limite máximo de turnos por dia de ${escaparHtml(p.nome)}">
+              </td>
               <td>${p.observacoes ? escaparHtml(p.observacoes) : '<span style="color:var(--text-muted)">—</span>'}</td>
               <td>
                 <div class="actions-row">
@@ -866,7 +1042,7 @@
         inputPessoaIdEdit.value = "";
         inputPessoaNome.value = "";
         inputPessoaTurnos.value = "3";
-        inputPessoaMaxDia.value = String(Math.max(1, parseInt(state.definicoes.maxTurnosDia, 10) || 1));
+        inputPessoaMaxDia.value = "1";
         inputPessoaObs.value = "";
         formEquipaTitle.textContent = "Adicionar Elemento à Equipa";
         btnSalvarPessoa.textContent = "Adicionar Pessoa";
@@ -910,6 +1086,26 @@
         limparFormularioEquipa();
       });
 
+      // Edição inline de limites na tabela da equipa
+      document.getElementById("equipa-table-container").addEventListener("change", function (e) {
+        const input = e.target.closest("input[data-inline-field]");
+        if (!input) return;
+        const id = input.getAttribute("data-id");
+        const field = input.getAttribute("data-inline-field");
+        const pessoa = state.equipa.find(function (p) { return p.id === id; });
+        if (!pessoa) return;
+
+        if (field === "turnosPretendidos") {
+          pessoa.turnosPretendidos = Math.max(0, parseInt(input.value, 10) || 0);
+          input.value = pessoa.turnosPretendidos;
+        } else if (field === "maxTurnosDia") {
+          pessoa.maxTurnosDia = Math.max(1, parseInt(input.value, 10) || 1);
+          input.value = pessoa.maxTurnosDia;
+        }
+        guardarEstado();
+        renderizarHorarios();
+      });
+
       document.getElementById("equipa-table-container").addEventListener("click", function (e) {
         const btn = e.target.closest("button[data-action]");
         if (!btn) return;
@@ -934,6 +1130,7 @@
           if (!confirm('Remover "' + pessoa.nome + '" da equipa?')) return;
 
           state.equipa = state.equipa.filter(function (p) { return p.id !== id; });
+          delete state.diasDisponiveis[id];
           delete state.disponibilidades[id];
           delete state.amizades[id];
           Object.keys(state.amizades).forEach(function (outroId) {
@@ -958,7 +1155,7 @@
       });
 
       // =========================================================================
-      // SECÇÃO 2: DISPONIBILIDADES E DEFINIÇÕES
+      // SECÇÃO 2: DISPONIBILIDADES (EM 2 PASSOS)
       // =========================================================================
       const formDefinicoes = document.getElementById("form-definicoes");
 
@@ -969,7 +1166,6 @@
         document.getElementById("cfg-hora-fim").value = state.definicoes.horaFim;
         document.getElementById("cfg-duracao").value = state.definicoes.duracaoMinutos;
         document.getElementById("cfg-pessoas-turno").value = state.definicoes.pessoasPorTurno;
-        document.getElementById("cfg-max-turnos-dia").value = Math.max(1, parseInt(state.definicoes.maxTurnosDia, 10) || 1);
       }
 
       formDefinicoes.addEventListener("submit", function (e) {
@@ -981,94 +1177,183 @@
           return;
         }
 
-        const antigoMaxDia = Math.max(1, parseInt(state.definicoes.maxTurnosDia, 10) || 1);
-        const novoMaxDia = Math.max(1, parseInt(document.getElementById("cfg-max-turnos-dia").value, 10) || 1);
-
         state.definicoes.dataInicio = dIni;
         state.definicoes.dataFim = dFim;
         state.definicoes.horaInicio = document.getElementById("cfg-hora-inicio").value;
         state.definicoes.horaFim = document.getElementById("cfg-hora-fim").value;
         state.definicoes.duracaoMinutos = Math.max(15, parseInt(document.getElementById("cfg-duracao").value, 10) || 60);
         state.definicoes.pessoasPorTurno = Math.max(1, parseInt(document.getElementById("cfg-pessoas-turno").value, 10) || 2);
-        state.definicoes.maxTurnosDia = novoMaxDia;
-
-        // Atualizar as pessoas que tinham o valor padrão anterior
-        if (novoMaxDia !== antigoMaxDia) {
-          state.equipa.forEach(function (p) {
-            if (!p.maxTurnosDia || p.maxTurnosDia === antigoMaxDia) {
-              p.maxTurnosDia = novoMaxDia;
-            }
-          });
-        }
-
-        if (!inputPessoaIdEdit.value) {
-          inputPessoaMaxDia.value = String(novoMaxDia);
-        }
 
         guardarEstado();
         atualizarTodasVistas();
-      });
-
-      document.getElementById("btn-aplicar-max-todos").addEventListener("click", function () {
-        const novoMaxDia = Math.max(1, parseInt(document.getElementById("cfg-max-turnos-dia").value, 10) || 1);
-        state.definicoes.maxTurnosDia = novoMaxDia;
-        state.equipa.forEach(function (p) {
-          p.maxTurnosDia = novoMaxDia;
-        });
-        if (!inputPessoaIdEdit.value) {
-          inputPessoaMaxDia.value = String(novoMaxDia);
-        }
-        guardarEstado();
-        atualizarTodasVistas();
-        alert("O limite máximo de " + novoMaxDia + " turno(s) por dia foi aplicado a todos os elementos da equipa.");
       });
 
       function renderizarDisponibilidades() {
-        const container = document.getElementById("disponibilidades-container");
-        if (state.equipa.length === 0) {
-          container.innerHTML = '<div class="empty-state">Adicione pessoas na secção "Equipa" para configurar as respetivas disponibilidades.</div>';
-          return;
-        }
+        const diasContainer = document.getElementById("dias-disponiveis-container");
+        const horariosContainer = document.getElementById("horarios-disponiveis-container");
+        const selectFiltroPessoa = document.getElementById("select-filtro-disp-pessoa");
 
-        const turnos = obterTurnosConfigurados();
-        if (turnos.length === 0) {
-          container.innerHTML = '<div class="empty-state">Verifique as definições de datas e horários acima para gerar as colunas de turnos.</div>';
-          return;
-        }
-
-        let html = "<table><thead><tr><th class='sticky-col'>Pessoa \\ Turno</th>";
-        turnos.forEach(function (t) {
-          html += `
-            <th class="shift-col-hdr">
-              <div>${escaparHtml(t.dataFormatada)}</div>
-              <div>${escaparHtml(t.horaInicio)} - ${escaparHtml(t.horaFim)}</div>
-            </th>
-          `;
+        const selecaoAtual = selectFiltroPessoa.value || "todas";
+        let optionsHtml = '<option value="todas">Mostrar todas as pessoas</option>';
+        state.equipa.forEach(function (p) {
+          optionsHtml += `<option value="${p.id}" ${selecaoAtual === p.id ? "selected" : ""}>${escaparHtml(p.nome)}</option>`;
         });
-        html += "</tr></thead><tbody>";
+        selectFiltroPessoa.innerHTML = optionsHtml;
+
+        if (state.equipa.length === 0) {
+          diasContainer.innerHTML = '<div class="empty-state">Adicione pessoas na secção "1. Equipa" primeiro.</div>';
+          horariosContainer.innerHTML = '<div class="empty-state">Adicione pessoas na secção "1. Equipa" primeiro.</div>';
+          return;
+        }
+
+        const dias = obterDiasConfigurados();
+        const turnos = obterTurnosConfigurados();
+
+        if (dias.length === 0 || turnos.length === 0) {
+          diasContainer.innerHTML = '<div class="empty-state">Verifique as definições de datas e horários acima.</div>';
+          horariosContainer.innerHTML = '<div class="empty-state">Verifique as definições de datas e horários acima.</div>';
+          return;
+        }
+
+        // Renderizar Passo 1: Tabela de seleção de dias
+        let htmlDias = "<table><thead><tr><th class='sticky-col'>Pessoa \\ Dia do Evento</th>";
+        dias.forEach(function (d) {
+          htmlDias += `<th style="text-align:center;">${escaparHtml(d.dataFormatada)}</th>`;
+        });
+        htmlDias += "<th style='text-align:center; width:170px;'>Seleção Rápida</th></tr></thead><tbody>";
 
         state.equipa.forEach(function (p) {
-          html += `<tr><td class="sticky-col">${escaparHtml(p.nome)}</td>`;
-          turnos.forEach(function (t) {
-            const val = obterDisponibilidade(p.id, t.id);
-            html += `
-              <td class="disp-cell">
-                <select class="disp-select state-${val}" data-pessoa="${p.id}" data-turno="${t.id}" aria-label="Disponibilidade de ${escaparHtml(p.nome)} em ${t.dataFormatada} ${t.horaInicio}">
-                  <option value="available" ${val === "available" ? "selected" : ""}>Disponível</option>
-                  <option value="preferred" ${val === "preferred" ? "selected" : ""}>Pref. disponível</option>
-                  <option value="unavailable" ${val === "unavailable" ? "selected" : ""}>Indisponível</option>
-                </select>
+          htmlDias += `<tr><td class="sticky-col">${escaparHtml(p.nome)}</td>`;
+          dias.forEach(function (d) {
+            const ativo = podeTrabalharNoDia(p.id, d.dataIso);
+            const cls = ativo ? "day-on" : "day-off";
+            const texto = ativo ? "Pode ir" : "Não pode";
+            htmlDias += `
+              <td class="day-check-cell">
+                <label class="day-toggle-label ${cls}">
+                  <input type="checkbox" class="chk-dia-disp" data-pessoa="${p.id}" data-dia="${d.dataIso}" ${ativo ? "checked" : ""}>
+                  <span>${texto}</span>
+                </label>
               </td>
             `;
           });
-          html += "</tr>";
+          htmlDias += `
+            <td style="text-align:center;">
+              <div class="actions-row" style="justify-content:center;">
+                <button type="button" class="btn btn-secondary btn-sm" data-quick-days="all" data-pessoa="${p.id}">Todos</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-quick-days="none" data-pessoa="${p.id}">Nenhum</button>
+              </div>
+            </td>
+          `;
+          htmlDias += "</tr>";
         });
 
-        html += "</tbody></table>";
-        container.innerHTML = html;
+        htmlDias += "</tbody></table>";
+        diasContainer.innerHTML = htmlDias;
+
+        // Renderizar Passo 2: Horários apenas dos dias selecionados
+        renderizarHorariosDosDiasSelecionados(dias, turnos);
       }
 
-      document.getElementById("disponibilidades-container").addEventListener("change", function (e) {
+      function renderizarHorariosDosDiasSelecionados(dias, turnos) {
+        const horariosContainer = document.getElementById("horarios-disponiveis-container");
+        const filtroPessoa = document.getElementById("select-filtro-disp-pessoa").value || "todas";
+
+        const pessoasLista = (filtroPessoa === "todas")
+          ? state.equipa
+          : state.equipa.filter(function (p) { return p.id === filtroPessoa; });
+
+        let htmlHorarios = "";
+
+        pessoasLista.forEach(function (p) {
+          const diasSelecionados = dias.filter(function (d) {
+            return podeTrabalharNoDia(p.id, d.dataIso);
+          });
+
+          htmlHorarios += `
+            <div class="person-schedule-card">
+              <div class="person-schedule-header">
+                <span>${escaparHtml(p.nome)} (Máx. ${obterLimiteDiaPessoa(p)} turno(s)/dia)</span>
+                <span style="font-size:0.85rem; color:var(--text-muted);">${diasSelecionados.length} dia(s) selecionado(s)</span>
+              </div>
+              <div class="person-days-container">
+          `;
+
+          if (diasSelecionados.length === 0) {
+            htmlHorarios += `
+              <div style="color:var(--text-muted); font-size:0.88rem;">
+                Nenhum dia selecionado no Passo 1 para <strong>${escaparHtml(p.nome)}</strong>. Assinale pelo menos um dia acima para escolher os horários.
+              </div>
+            `;
+          } else {
+            diasSelecionados.forEach(function (d) {
+              const turnosDesseDia = turnos.filter(function (t) {
+                return t.dataIso === d.dataIso;
+              });
+
+              htmlHorarios += `
+                <div class="selected-day-row">
+                  <div class="selected-day-title">
+                    <span>Dia ${escaparHtml(d.dataFormatada)}</span>
+                  </div>
+                  <div class="shifts-flex">
+              `;
+
+              turnosDesseDia.forEach(function (t) {
+                const val = obterDisponibilidadeHorario(p.id, t);
+                htmlHorarios += `
+                  <div class="shift-slot-box">
+                    <div class="shift-slot-time">${escaparHtml(t.horaInicio)} - ${escaparHtml(t.horaFim)}</div>
+                    <select class="disp-select state-${val}" data-pessoa="${p.id}" data-turno="${t.id}">
+                      <option value="available" ${val === "available" ? "selected" : ""}>Disponível</option>
+                      <option value="preferred" ${val === "preferred" ? "selected" : ""}>Preferencialmente disponível</option>
+                      <option value="unavailable" ${val === "unavailable" ? "selected" : ""}>Indisponível</option>
+                    </select>
+                  </div>
+                `;
+              });
+
+              htmlHorarios += `
+                  </div>
+                </div>
+              `;
+            });
+          }
+
+          htmlHorarios += `
+              </div>
+            </div>
+          `;
+        });
+
+        horariosContainer.innerHTML = htmlHorarios;
+      }
+
+      // Eventos Passo 1 (Seleção de Dias)
+      document.getElementById("dias-disponiveis-container").addEventListener("change", function (e) {
+        const chk = e.target.closest("input.chk-dia-disp");
+        if (!chk) return;
+        const pId = chk.getAttribute("data-pessoa");
+        const dataIso = chk.getAttribute("data-dia");
+        definirDiaDisponivel(pId, dataIso, chk.checked);
+        renderizarDisponibilidades();
+      });
+
+      document.getElementById("dias-disponiveis-container").addEventListener("click", function (e) {
+        const btn = e.target.closest("button[data-quick-days]");
+        if (!btn) return;
+        const pId = btn.getAttribute("data-pessoa");
+        const modo = btn.getAttribute("data-quick-days");
+        const ativo = (modo === "all");
+        const dias = obterDiasConfigurados();
+        dias.forEach(function (d) {
+          definirDiaDisponivel(pId, d.dataIso, ativo);
+        });
+        renderizarDisponibilidades();
+      });
+
+      // Eventos Passo 2 (Horários dentro dos dias selecionados)
+      document.getElementById("horarios-disponiveis-container").addEventListener("change", function (e) {
         const sel = e.target.closest("select.disp-select");
         if (!sel) return;
         const pId = sel.getAttribute("data-pessoa");
@@ -1076,7 +1361,13 @@
         const val = sel.value;
 
         sel.className = "disp-select state-" + val;
-        definirDisponibilidade(pId, tId, val);
+        definirDisponibilidadeHorario(pId, tId, val);
+      });
+
+      document.getElementById("select-filtro-disp-pessoa").addEventListener("change", function () {
+        const dias = obterDiasConfigurados();
+        const turnos = obterTurnosConfigurados();
+        renderizarHorariosDosDiasSelecionados(dias, turnos);
       });
 
       // =========================================================================
@@ -1110,7 +1401,7 @@
               html += `<td class="amz-self">—</td>`;
             } else {
               const val = obterAmizade(pLinha.id, pCol.id);
-              html += `<td class="amz-cell"><select class="amz-select amz-val-${val}" data-origem="${pLinha.id}" data-alvo="${pCol.id}" aria-label="Preferência de ${escaparHtml(pLinha.nome)} em relação a ${escaparHtml(pCol.nome)}">`;
+              html += `<td class="amz-cell"><select class="amz-select amz-val-${val}" data-origem="${pLinha.id}" data-alvo="${pCol.id}">`;
               opcoes.forEach(function (op) {
                 html += `<option value="${op.v}" ${val === op.v ? "selected" : ""}>${op.label}</option>`;
               });
@@ -1155,7 +1446,6 @@
           return;
         }
 
-        // Contagem de turnos atribuídos por pessoa (no total e por cada dia)
         const contagemAtribuidos = {};
         const contagemAtribuidosPorDia = {};
         const ultimoIndiceTurno = {};
@@ -1171,11 +1461,22 @@
           atribuicoes[t.id] = [];
         });
 
-        // Ordenar turnos pela escassez de pessoas disponíveis (turnos mais restritos primeiro),
-        // mantendo um ligeiro fator aleatório de desempate para permitir "Voltar a gerar"
+        // Contar quantos turnos cada pessoa tem disponíveis em cada dia (para priorizar quem tem menos opções no dia)
+        const opcoesNoDiaPorPessoa = {};
+        state.equipa.forEach(function (p) {
+          opcoesNoDiaPorPessoa[p.id] = {};
+          turnos.forEach(function (t) {
+            const disp = obterDisponibilidadeHorario(p.id, t);
+            if (disp === "available" || disp === "preferred") {
+              opcoesNoDiaPorPessoa[p.id][t.dataIso] = (opcoesNoDiaPorPessoa[p.id][t.dataIso] || 0) + 1;
+            }
+          });
+        });
+
+        // Ordenar turnos pela escassez de candidatos disponíveis
         const turnosOrdenados = turnos.map(function (t, idxOriginal) {
           const dispCount = state.equipa.filter(function (p) {
-            return obterDisponibilidade(p.id, t.id) !== "unavailable";
+            return obterDisponibilidadeHorario(p.id, t) !== "unavailable";
           }).length;
           return {
             turno: t,
@@ -1190,19 +1491,19 @@
 
         const avisos = [];
 
-        // Preencher cada turno
         turnosOrdenados.forEach(function (item) {
           const t = item.turno;
           const idxTurno = item.idxOriginal;
           const escaladosNoTurno = atribuicoes[t.id];
 
           for (let vaga = 0; vaga < necessarios; vaga++) {
-            // Regras estritas de elegibilidade:
-            // 1. Nunca atribuir alguém indisponível ou já escalado neste turno
-            // 2. Respeitar o limite máximo de turnos por dia de cada pessoa
+            // Filtrar candidatos estritamente elegíveis:
+            // 1. Selecionaram este dia no Passo 1 e não estão indisponíveis neste horário no Passo 2
+            // 2. Não estão já escalados neste mesmo turno
+            // 3. Não atingiram o seu limite máximo de turnos por dia (maxTurnosDia)
             const candidatos = state.equipa.filter(function (p) {
               if (escaladosNoTurno.indexOf(p.id) !== -1) return false;
-              const disp = obterDisponibilidade(p.id, t.id);
+              const disp = obterDisponibilidadeHorario(p.id, t);
               if (disp !== "available" && disp !== "preferred") return false;
 
               const feitosNoDia = contagemAtribuidosPorDia[p.id][t.dataIso] || 0;
@@ -1213,59 +1514,61 @@
             });
 
             if (candidatos.length === 0) {
-              break; // Não há mais candidatos elegíveis para este turno
+              break;
             }
 
-            // Avaliar cada candidato respeitando a hierarquia de prioridades:
-            // 1. Disponibilidade e distribuição equilibrada (prioridade máxima)
-            // 2. Preferencialmente disponível
-            // 3. Juntar preferências positivas e evitar negativas quando existam alternativas
             const candidatosPontuados = candidatos.map(function (cand) {
-              const atribuidos = contagemAtribuidos[cand.id];
+              const atribuidosTotal = contagemAtribuidos[cand.id];
               const feitosNoDia = contagemAtribuidosPorDia[cand.id][t.dataIso] || 0;
               const pretendidos = Number(cand.turnosPretendidos);
-              const disp = obterDisponibilidade(cand.id, t.id);
+              const disp = obterDisponibilidadeHorario(cand.id, t);
+              const opcoesDia = opcoesNoDiaPorPessoa[cand.id][t.dataIso] || 1;
 
-              // Equilíbrio de turnos:
-              // Pessoas ainda abaixo da meta de turnos pretendidos têm prioridade clara
-              const abaixoDaMeta = (pretendidos > 0 && atribuidos < pretendidos) ? 1 : 0;
-              const racioCarga = pretendidos > 0 ? (atribuidos / pretendidos) : (atribuidos + 1);
-              const folgaMeta = pretendidos - atribuidos;
+              let pontuacao = 0;
 
-              let pontuacaoEquilibrio = 0;
-              if (abaixoDaMeta) {
-                pontuacaoEquilibrio += 1000;
+              // PRIORIDADE N.º 1: Garantir que cada pessoa disponível no dia tem PELO MENOS 1 turno nesse dia
+              // antes de qualquer pessoa receber o 2.º turno nesse mesmo dia.
+              if (feitosNoDia === 0) {
+                pontuacao += 10000;
+                // Entre os que ainda têm 0 turnos hoje, dar prioridade a quem tem menos horários disponíveis hoje
+                pontuacao += Math.max(0, (20 - opcoesDia) * 40);
+              } else {
+                // Penalizar fortemente quem já tem pelo menos 1 turno neste dia
+                pontuacao -= (feitosNoDia * 3000);
+              }
+
+              // PRIORIDADE N.º 2: Equilíbrio face ao número total de turnos pretendidos no evento
+              if (pretendidos > 0 && atribuidosTotal < pretendidos) {
+                pontuacao += 1000;
               } else if (pretendidos === 0) {
-                pontuacaoEquilibrio -= 600;
+                pontuacao -= 600;
               }
-              pontuacaoEquilibrio += (folgaMeta * 120) - (racioCarga * 250) - (atribuidos * 45);
+              const racioCarga = pretendidos > 0 ? (atribuidosTotal / pretendidos) : (atribuidosTotal + 1);
+              const folgaMeta = pretendidos - atribuidosTotal;
+              pontuacao += (folgaMeta * 120) - (racioCarga * 250) - (atribuidosTotal * 45);
 
-              // Dar preferência a quem ainda não fez nenhum turno nesse mesmo dia
-              pontuacaoEquilibrio -= (feitosNoDia * 60);
-
-              // Evitar turnos imediatamente consecutivos quando existam alternativas equilibradas
+              // Evitar turnos seguidos se houver alternativas
               if (Math.abs(idxTurno - ultimoIndiceTurno[cand.id]) === 1) {
-                pontuacaoEquilibrio -= 90;
+                pontuacao -= 90;
               }
 
-              // Regra 4: Preferência a pessoas marcadas como "Preferencialmente disponível"
-              const pontuacaoDisponibilidade = (disp === "preferred") ? 160 : 0;
+              // PRIORIDADE N.º 3: Preferencialmente disponível no horário
+              if (disp === "preferred") {
+                pontuacao += 160;
+              }
 
-              // Regras 5 e 6: Amizades com elementos já escalados neste turno
+              // PRIORIDADE N.º 4: Amizades
               let somaAmizade = 0;
               let temConflitoNegativo = false;
 
               if (escaladosNoTurno.length > 0) {
                 escaladosNoTurno.forEach(function (colegaId) {
-                  const afinidade = calcularAfinidadePar(cand.id, colegaId);
-                  somaAmizade += afinidade;
+                  somaAmizade += calcularAfinidadePar(cand.id, colegaId);
                   if (temPreferenciaNegativaPar(cand.id, colegaId)) {
                     temConflitoNegativo = true;
                   }
                 });
               } else {
-                // Para a primeira vaga do turno, valorizar ligeiramente quem tem afinidade positiva
-                // com outros candidatos disponíveis para este mesmo turno
                 candidatos.forEach(function (outroCand) {
                   if (outroCand.id !== cand.id) {
                     const af = calcularAfinidadePar(cand.id, outroCand.id);
@@ -1274,18 +1577,16 @@
                 });
               }
 
-              let pontuacaoAmizade = somaAmizade * 18;
+              pontuacao += (somaAmizade * 18);
               if (temConflitoNegativo) {
-                // Penalizar relações negativas para que alternativas sem conflito sejam preferidas
-                pontuacaoAmizade -= 75;
+                pontuacao -= 75;
               }
 
-              // Desempate aleatório suave para o botão "Voltar a Gerar"
               const desempate = Math.random() * 6;
 
               return {
                 pessoa: cand,
-                scoreTotal: pontuacaoEquilibrio + pontuacaoDisponibilidade + pontuacaoAmizade + desempate
+                scoreTotal: pontuacao + desempate
               };
             });
 
@@ -1301,13 +1602,12 @@
           }
         });
 
-        // Verificar turnos incompletos pela ordem cronológica
         turnos.forEach(function (t) {
           const totalEscalados = atribuicoes[t.id].length;
           if (totalEscalados < necessarios) {
             avisos.push(
               "Dia " + t.dataFormatada + " (" + t.horaInicio + " - " + t.horaFim + "): apenas " +
-              totalEscalados + " de " + necessarios + " pessoa(s) atribuída(s) (sem mais pessoas disponíveis ou dentro do limite diário de turnos)."
+              totalEscalados + " de " + necessarios + " pessoa(s) atribuída(s) (verifique se há pessoas suficientes com este dia selecionado e abaixo do limite diário)."
             );
           }
         });
@@ -1337,9 +1637,8 @@
         const pessoaContainer = document.getElementById("horarios-pessoa-container");
         const selectPessoa = document.getElementById("select-consulta-pessoa");
 
-        // Atualizar opções do seletor de pessoas
         const selecaoAtual = selectPessoa.value || "todas";
-        let optionsHtml = '<option value="todas">Todas as pessoas (Resumo e Turnos)</option>';
+        let optionsHtml = '<option value="todas">Todas as pessoas</option>';
         state.equipa.forEach(function (p) {
           optionsHtml += `<option value="${p.id}" ${selecaoAtual === p.id ? "selected" : ""}>${escaparHtml(p.nome)}</option>`;
         });
@@ -1356,7 +1655,6 @@
         const mapaPessoas = obterMapaPessoas();
         const necessarios = state.definicoes.pessoasPorTurno;
 
-        // Mostrar avisos se existirem turnos incompletos
         if (state.horarioGerado.avisos && state.horarioGerado.avisos.length > 0) {
           let avisoHtml = `
             <div class="alert alert-warning">
@@ -1372,7 +1670,6 @@
           avisosContainer.innerHTML = "";
         }
 
-        // Agrupar turnos por dia
         const turnosPorDia = {};
         turnos.forEach(function (t) {
           if (!turnosPorDia[t.dataIso]) {
@@ -1413,7 +1710,7 @@
 
               let badgesHtml = "";
               if (idsEscalados.length === 0) {
-                badgesHtml = '<span style="color:var(--danger); font-weight:600;">Ninguém escalado (sem candidatos elegíveis)</span>';
+                badgesHtml = '<span style="color:var(--danger); font-weight:600;">Ninguém escalado</span>';
               } else {
                 idsEscalados.forEach(function (id) {
                   badgesHtml += `<span class="badge badge-person">${escaparHtml(mapaPessoas[id].nome)}</span>`;
@@ -1438,7 +1735,6 @@
           diaContainer.innerHTML = htmlDias;
         }
 
-        // Renderizar consulta por pessoa
         renderizarConsultaPorPessoa(turnos, mapaPessoas);
       }
 
@@ -1460,9 +1756,9 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width: 190px;">Pessoa</th>
-                  <th style="width: 160px;">Atribuídos / Pretendidos</th>
-                  <th style="width: 140px;">Máx. Turnos / Dia</th>
+                  <th style="width: 180px;">Pessoa</th>
+                  <th style="width: 150px;">Total Atribuídos</th>
+                  <th style="width: 150px;">Limite Máx. / Dia</th>
                   <th>Turnos Escalados</th>
                 </tr>
               </thead>
@@ -1504,7 +1800,7 @@
             <tr>
               <td><strong>${escaparHtml(p.nome)}</strong></td>
               <td><strong>${turnosDaPessoa.length}</strong> / ${Number(p.turnosPretendidos)}</td>
-              <td>${obterLimiteDiaPessoa(p)} / dia</td>
+              <td>Máx. <strong>${obterLimiteDiaPessoa(p)}</strong> / dia</td>
               <td>${listaTurnosHtml}</td>
             </tr>
           `;
@@ -1573,12 +1869,12 @@
             if (imported.definicoes) {
               state.definicoes = Object.assign({}, state.definicoes, imported.definicoes);
             }
-            state.definicoes.maxTurnosDia = Math.max(1, parseInt(state.definicoes.maxTurnosDia, 10) || 1);
             state.equipa = imported.equipa.map(function (p) {
               return Object.assign({}, p, {
                 maxTurnosDia: obterLimiteDiaPessoa(p)
               });
             });
+            state.diasDisponiveis = imported.diasDisponiveis || {};
             state.disponibilidades = imported.disponibilidades || {};
             state.amizades = imported.amizades || {};
             state.horarioGerado = imported.horarioGerado || null;
